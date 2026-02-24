@@ -9,7 +9,9 @@ export type Document = {
 };
 
 export async function listDocuments(): Promise<Document[]> {
-  const { data, error } = await supabase.storage.from(BUCKET).list("", {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+  const { data, error } = await supabase.storage.from(BUCKET).list(user.id, {
     sortBy: { column: "created_at", order: "desc" },
   });
   if (error || !data) return [];
@@ -17,7 +19,7 @@ export async function listDocuments(): Promise<Document[]> {
     .filter((f) => f.name !== ".emptyFolderPlaceholder")
     .map((file) => ({
       name: file.name,
-      path: file.name,
+      path: `${user.id}/${file.name}`,
       size: file.metadata?.size ?? null,
     }));
 }

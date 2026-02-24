@@ -31,8 +31,11 @@ export async function uploadPdf(): Promise<UploadPdfResult> {
     });
     const arrayBuffer = decode(base64);
 
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { ok: false, message: "Not authenticated" };
+
     const safeName = (name || "document.pdf").replace(/[^a-zA-Z0-9._-]/g, "_");
-    const path = `${Date.now()}-${safeName}`;
+    const path = `${user.id}/${Date.now()}-${safeName}`;
 
     const { data, error } = await supabase.storage
       .from(BUCKET)
