@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { useProfile, useSession } from "@/app/lib/auth";
 import { listLegalRequests, type LegalRequest } from "@/app/lib/legal-requests";
+import { useTheme, type ThemeColors } from "@/app/lib/theme";
 
 type IoniconName = React.ComponentProps<typeof Ionicons>["name"];
 
@@ -18,6 +19,8 @@ export default function HomeScreen() {
   const router = useRouter();
   const { session, loading: sessionLoading } = useSession();
   const profile = useProfile();
+  const { colors } = useTheme();
+  const styles = makeStyles(colors);
   const [requests, setRequests] = useState<LegalRequest[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -34,7 +37,7 @@ export default function HomeScreen() {
   );
 
   if (sessionLoading) {
-    return <ActivityIndicator style={styles.loader} size="large" color="#007AFF" />;
+    return <ActivityIndicator style={styles.loader} size="large" color="#1B2D4E" />;
   }
 
   if (!session) {
@@ -68,7 +71,7 @@ export default function HomeScreen() {
             <Ionicons
               name={isAttorney ? "briefcase" : "person"}
               size={26}
-              color="#007AFF"
+              color="#1B2D4E"
             />
           </View>
           <View style={styles.greetingText}>
@@ -95,17 +98,17 @@ export default function HomeScreen() {
           </View>
         ) : isAttorney ? (
           <View style={styles.grid}>
-            <StatCard label="Available"  value={available}  icon="mail-unread-outline"      color="#007AFF" />
-            <StatCard label="In Review"  value={myInReview} icon="hourglass-outline"         color="#FF9500" />
-            <StatCard label="Closed"     value={myClosed}   icon="checkmark-circle-outline"  color="#34C759" />
-            <StatCard label="My Cases"   value={myTotal}    icon="briefcase-outline"          color="#AF52DE" />
+            <StatCard label="Available"  value={available}  icon="mail-unread-outline"      color="#1B2D4E" colors={colors} />
+            <StatCard label="In Review"  value={myInReview} icon="hourglass-outline"         color="#C9A84C" colors={colors} />
+            <StatCard label="Closed"     value={myClosed}   icon="checkmark-circle-outline"  color="#3A7D4E" colors={colors} />
+            <StatCard label="My Cases"   value={myTotal}    icon="briefcase-outline"          color="#1B2D4E" colors={colors} />
           </View>
         ) : (
           <View style={styles.grid}>
-            <StatCard label="Drafts"     value={drafts}    icon="document-outline"           color="#8E8E93" />
-            <StatCard label="Submitted"  value={submitted} icon="paper-plane-outline"        color="#007AFF" />
-            <StatCard label="In Review"  value={inReview}  icon="hourglass-outline"          color="#FF9500" />
-            <StatCard label="Closed"     value={closed}    icon="checkmark-circle-outline"   color="#34C759" />
+            <StatCard label="Drafts"     value={drafts}    icon="document-outline"           color="#8A8F9D" colors={colors} />
+            <StatCard label="Submitted"  value={submitted} icon="paper-plane-outline"        color="#1B2D4E" colors={colors} />
+            <StatCard label="In Review"  value={inReview}  icon="hourglass-outline"          color="#C9A84C" colors={colors} />
+            <StatCard label="Closed"     value={closed}    icon="checkmark-circle-outline"   color="#3A7D4E" colors={colors} />
           </View>
         )}
 
@@ -115,21 +118,23 @@ export default function HomeScreen() {
         {!isAttorney && (
           <ActionRow
             icon="add-circle-outline"
-            iconBg="#EAF3FF"
-            iconColor="#007AFF"
+            iconBg="#E8EDF4"
+            iconColor="#1B2D4E"
             title="New Legal Request"
             subtitle="Submit a new case for review"
             onPress={() => router.push("/legal-requests/new")}
+            colors={colors}
           />
         )}
 
         <ActionRow
           icon={isAttorney ? "briefcase-outline" : "list-outline"}
-          iconBg={isAttorney ? "#EAF3FF" : "#FFF3EA"}
-          iconColor={isAttorney ? "#007AFF" : "#FF9500"}
+          iconBg="#E8EDF4"
+          iconColor="#1B2D4E"
           title={isAttorney ? "Legal Requests" : "My Cases"}
           subtitle={isAttorney ? "View available and active cases" : "Track all your legal requests"}
           onPress={() => router.push("/legal-requests")}
+          colors={colors}
         />
 
       </ScrollView>
@@ -144,15 +149,18 @@ function StatCard({
   value,
   icon,
   color,
+  colors,
 }: {
   label: string;
   value: number;
   icon: IoniconName;
   color: string;
+  colors: ThemeColors;
 }) {
+  const styles = makeStyles(colors);
   return (
     <View style={styles.statCard}>
-      <View style={[styles.statIconBg, { backgroundColor: color + "18" }]}>
+      <View style={[styles.statIconBg, { backgroundColor: color + "22" }]}>
         <Ionicons name={icon} size={22} color={color} />
       </View>
       <Text style={styles.statValue}>{value}</Text>
@@ -168,6 +176,7 @@ function ActionRow({
   title,
   subtitle,
   onPress,
+  colors,
 }: {
   icon: IoniconName;
   iconBg: string;
@@ -175,7 +184,9 @@ function ActionRow({
   title: string;
   subtitle: string;
   onPress: () => void;
+  colors: ThemeColors;
 }) {
+  const styles = makeStyles(colors);
   return (
     <Pressable
       style={({ pressed }) => [styles.actionRow, pressed && styles.actionRowPressed]}
@@ -188,156 +199,158 @@ function ActionRow({
         <Text style={styles.actionTitle}>{title}</Text>
         <Text style={styles.actionSubtitle}>{subtitle}</Text>
       </View>
-      <Ionicons name="chevron-forward" size={16} color="#C7C7CC" />
+      <Ionicons name="chevron-forward" size={16} color={colors.muted} />
     </Pressable>
   );
 }
 
 // ── Styles ───────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F2F2F7",
-  },
-  loader: {
-    flex: 1,
-    marginTop: 48,
-  },
-  scroll: {
-    padding: 16,
-    gap: 12,
-    paddingBottom: 40,
-  },
+function makeStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.bg,
+    },
+    loader: {
+      flex: 1,
+      marginTop: 48,
+    },
+    scroll: {
+      padding: 16,
+      gap: 12,
+      paddingBottom: 40,
+    },
 
-  // Greeting
-  greetingCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#fff",
-    borderRadius: 14,
-    padding: 16,
-    gap: 12,
-  },
-  greetingAvatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: "#EAF3FF",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  greetingText: {
-    flex: 1,
-    gap: 2,
-  },
-  greetingWelcome: {
-    fontSize: 12,
-    color: "#8E8E93",
-  },
-  greetingHandle: {
-    fontSize: 17,
-    fontWeight: "600",
-    color: "#000",
-  },
-  rolePill: {
-    borderRadius: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
-  rolePillClient: {
-    backgroundColor: "#EAF3FF",
-  },
-  rolePillAttorney: {
-    backgroundColor: "#F0E6FF",
-  },
-  rolePillText: {
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  rolePillTextClient: {
-    color: "#007AFF",
-  },
-  rolePillTextAttorney: {
-    color: "#AF52DE",
-  },
+    // Greeting
+    greetingCard: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.card,
+      borderRadius: 14,
+      padding: 16,
+      gap: 12,
+    },
+    greetingAvatar: {
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      backgroundColor: "#E8EDF4",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    greetingText: {
+      flex: 1,
+      gap: 2,
+    },
+    greetingWelcome: {
+      fontSize: 12,
+      color: colors.muted,
+    },
+    greetingHandle: {
+      fontSize: 17,
+      fontWeight: "600",
+      color: colors.text,
+    },
+    rolePill: {
+      borderRadius: 20,
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+    },
+    rolePillClient: {
+      backgroundColor: "#E8EDF4",
+    },
+    rolePillAttorney: {
+      backgroundColor: "#F5EEE0",
+    },
+    rolePillText: {
+      fontSize: 12,
+      fontWeight: "600",
+    },
+    rolePillTextClient: {
+      color: "#1B2D4E",
+    },
+    rolePillTextAttorney: {
+      color: "#C9A84C",
+    },
 
-  // Section label
-  sectionLabel: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#8E8E93",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-    marginTop: 4,
-  },
+    // Section label
+    sectionLabel: {
+      fontSize: 13,
+      fontWeight: "600",
+      color: colors.muted,
+      textTransform: "uppercase",
+      letterSpacing: 0.5,
+      marginTop: 4,
+    },
 
-  // Stats grid
-  grid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
-  },
-  statCard: {
-    width: "47.5%",
-    backgroundColor: "#fff",
-    borderRadius: 14,
-    padding: 16,
-    gap: 8,
-  },
-  statCardSkeleton: {
-    height: 110,
-    backgroundColor: "#E5E5EA",
-  },
-  statIconBg: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  statValue: {
-    fontSize: 32,
-    fontWeight: "700",
-    color: "#000",
-    lineHeight: 36,
-  },
-  statLabel: {
-    fontSize: 13,
-    color: "#8E8E93",
-    fontWeight: "500",
-  },
+    // Stats grid
+    grid: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 12,
+    },
+    statCard: {
+      width: "47.5%",
+      backgroundColor: colors.card,
+      borderRadius: 14,
+      padding: 16,
+      gap: 8,
+    },
+    statCardSkeleton: {
+      height: 110,
+      backgroundColor: colors.border,
+    },
+    statIconBg: {
+      width: 40,
+      height: 40,
+      borderRadius: 10,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    statValue: {
+      fontSize: 32,
+      fontWeight: "700",
+      color: colors.text,
+      lineHeight: 36,
+    },
+    statLabel: {
+      fontSize: 13,
+      color: colors.muted,
+      fontWeight: "500",
+    },
 
-  // Action rows
-  actionRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#fff",
-    borderRadius: 14,
-    padding: 14,
-    gap: 12,
-  },
-  actionRowPressed: {
-    opacity: 0.75,
-  },
-  actionIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  actionBody: {
-    flex: 1,
-    gap: 2,
-  },
-  actionTitle: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#000",
-  },
-  actionSubtitle: {
-    fontSize: 13,
-    color: "#8E8E93",
-  },
-});
+    // Action rows
+    actionRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.card,
+      borderRadius: 14,
+      padding: 14,
+      gap: 12,
+    },
+    actionRowPressed: {
+      opacity: 0.75,
+    },
+    actionIcon: {
+      width: 44,
+      height: 44,
+      borderRadius: 10,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    actionBody: {
+      flex: 1,
+      gap: 2,
+    },
+    actionTitle: {
+      fontSize: 15,
+      fontWeight: "600",
+      color: colors.text,
+    },
+    actionSubtitle: {
+      fontSize: 13,
+      color: colors.muted,
+    },
+  });
+}

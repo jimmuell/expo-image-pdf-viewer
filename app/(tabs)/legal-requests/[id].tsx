@@ -30,6 +30,7 @@ import {
   type LegalRequest,
   type RequestDocument,
 } from "@/app/lib/legal-requests";
+import { useTheme, type ThemeColors } from "@/app/lib/theme";
 
 const IMAGE_EXTS = /\.(jpe?g|png|gif|webp|heic|heif|bmp)$/i;
 function isImage(name: string) { return IMAGE_EXTS.test(name); }
@@ -39,6 +40,8 @@ export default function LegalRequestDetailScreen() {
   const router = useRouter();
   const { session } = useSession();
   const profile = useProfile();
+  const { colors } = useTheme();
+  const styles = makeStyles(colors);
 
   const [request, setRequest] = useState<LegalRequest | null>(null);
   const [docs, setDocs] = useState<RequestDocument[]>([]);
@@ -49,9 +52,6 @@ export default function LegalRequestDetailScreen() {
 
   const load = useCallback(async () => {
     if (!id) return;
-    // Only the initial mount shows the full-screen spinner (`loading` starts
-    // true).  Reloads triggered by claim / upload are silent so the content
-    // never tears down and repaints mid-session.
     const [req, docList] = await Promise.all([
       getLegalRequest(id),
       listRequestDocuments(id),
@@ -68,7 +68,7 @@ export default function LegalRequestDetailScreen() {
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" color="#1B2D4E" />
       </View>
     );
   }
@@ -202,7 +202,7 @@ export default function LegalRequestDetailScreen() {
     ]);
   };
 
-  const statusColor = STATUS_COLORS[request.status] ?? "#8E8E93";
+  const statusColor = STATUS_COLORS[request.status] ?? "#8A8F9D";
   const statusLabel = STATUS_LABELS[request.status] ?? request.status;
 
   return (
@@ -224,12 +224,12 @@ export default function LegalRequestDetailScreen() {
 
         {/* Case details */}
         <View style={styles.card}>
-          <DetailRow label="Case Type" value={caseTypeLabel(request.case_type)} />
-          <DetailRow label="Client" value={request.full_name} />
-          {request.phone ? <DetailRow label="Phone" value={request.phone} /> : null}
-          {request.email ? <DetailRow label="Email" value={request.email} /> : null}
+          <DetailRow label="Case Type" value={caseTypeLabel(request.case_type)} colors={colors} />
+          <DetailRow label="Client" value={request.full_name} colors={colors} />
+          {request.phone ? <DetailRow label="Phone" value={request.phone} colors={colors} /> : null}
+          {request.email ? <DetailRow label="Email" value={request.email} colors={colors} /> : null}
           {request.description ? (
-            <DetailRow label="Description" value={request.description} multiline />
+            <DetailRow label="Description" value={request.description} multiline colors={colors} />
           ) : null}
         </View>
 
@@ -263,7 +263,7 @@ export default function LegalRequestDetailScreen() {
                     <Ionicons
                       name={isImage(doc.name) ? "image-outline" : "document-text-outline"}
                       size={20}
-                      color="#007AFF"
+                      color="#1B2D4E"
                     />
                     <View style={styles.docInfo}>
                       <Text style={styles.docName} numberOfLines={1}>
@@ -304,10 +304,10 @@ export default function LegalRequestDetailScreen() {
             disabled={uploading}
           >
             {uploading ? (
-              <ActivityIndicator color="#007AFF" size="small" />
+              <ActivityIndicator color="#1B2D4E" size="small" />
             ) : (
               <>
-                <Ionicons name="attach-outline" size={18} color="#007AFF" />
+                <Ionicons name="attach-outline" size={18} color="#1B2D4E" />
                 <Text style={styles.secondaryButtonText}>Add Document</Text>
               </>
             )}
@@ -344,172 +344,151 @@ function DetailRow({
   label,
   value,
   multiline,
+  colors,
 }: {
   label: string;
   value: string;
   multiline?: boolean;
+  colors: ThemeColors;
 }) {
   return (
-    <View style={[styles.detailRow, multiline && styles.detailRowMultiline]}>
-      <Text style={styles.detailLabel}>{label}</Text>
-      <Text style={[styles.detailValue, multiline && styles.detailValueMultiline]}>
+    <View style={[
+      { paddingHorizontal: 14, paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.hairline, gap: 12 },
+      multiline ? { alignItems: "flex-start", flexDirection: "column", gap: 4 } : { flexDirection: "row", alignItems: "center" },
+    ]}>
+      <Text style={{ fontSize: 13, color: colors.muted, width: 90, flexShrink: 0 }}>{label}</Text>
+      <Text style={[{ fontSize: 15, color: colors.text }, multiline ? {} : { flex: 1 }]}>
         {value}
       </Text>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F2F2F7",
-  },
-  centered: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  errorText: {
-    fontSize: 16,
-    color: "#8E8E93",
-  },
-  scrollContent: {
-    padding: 16,
-    gap: 12,
-    paddingBottom: 40,
-  },
-  statusRow: {
-    flexDirection: "row",
-  },
-  badge: {
-    borderRadius: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
-  badgeText: {
-    color: "#fff",
-    fontSize: 13,
-    fontWeight: "600",
-  },
-  card: {
-    backgroundColor: "#fff",
-    borderRadius: 10,
-    overflow: "hidden",
-  },
-  detailRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#E5E5EA",
-    gap: 12,
-  },
-  detailRowMultiline: {
-    alignItems: "flex-start",
-    flexDirection: "column",
-    gap: 4,
-  },
-  detailLabel: {
-    fontSize: 13,
-    color: "#8E8E93",
-    width: 90,
-    flexShrink: 0,
-  },
-  detailValue: {
-    flex: 1,
-    fontSize: 15,
-    color: "#000",
-  },
-  detailValueMultiline: {
-    flex: undefined,
-  },
-  sectionTitle: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#8E8E93",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-    marginTop: 4,
-  },
-  emptyDocs: {
-    backgroundColor: "#fff",
-    borderRadius: 10,
-    padding: 20,
-    alignItems: "center",
-  },
-  emptyDocsText: {
-    fontSize: 14,
-    color: "#8E8E93",
-  },
-  docItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    gap: 10,
-  },
-  docItemBorder: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#E5E5EA",
-  },
-  docItemMain: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  docInfo: {
-    flex: 1,
-    gap: 2,
-  },
-  docName: {
-    fontSize: 14,
-    color: "#000",
-  },
-  docUploader: {
-    fontSize: 12,
-    color: "#8E8E93",
-  },
-  deleteButton: {
-    padding: 4,
-  },
-  primaryButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    backgroundColor: "#007AFF",
-    paddingVertical: 14,
-    borderRadius: 12,
-    marginTop: 4,
-  },
-  primaryButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  secondaryButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    backgroundColor: "#fff",
-    paddingVertical: 14,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: "#007AFF",
-    marginTop: 4,
-  },
-  secondaryButtonText: {
-    color: "#007AFF",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  buttonPressed: {
-    opacity: 0.8,
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-});
+function makeStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.bg,
+    },
+    centered: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    errorText: {
+      fontSize: 16,
+      color: colors.muted,
+    },
+    scrollContent: {
+      padding: 16,
+      gap: 12,
+      paddingBottom: 40,
+    },
+    statusRow: {
+      flexDirection: "row",
+    },
+    badge: {
+      borderRadius: 6,
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+    },
+    badgeText: {
+      color: "#fff",
+      fontSize: 13,
+      fontWeight: "600",
+    },
+    card: {
+      backgroundColor: colors.card,
+      borderRadius: 10,
+      overflow: "hidden",
+    },
+    sectionTitle: {
+      fontSize: 13,
+      fontWeight: "600",
+      color: colors.muted,
+      textTransform: "uppercase",
+      letterSpacing: 0.5,
+      marginTop: 4,
+    },
+    emptyDocs: {
+      backgroundColor: colors.card,
+      borderRadius: 10,
+      padding: 20,
+      alignItems: "center",
+    },
+    emptyDocsText: {
+      fontSize: 14,
+      color: colors.muted,
+    },
+    docItem: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+      gap: 10,
+    },
+    docItemBorder: {
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: colors.hairline,
+    },
+    docItemMain: {
+      flex: 1,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+    },
+    docInfo: {
+      flex: 1,
+      gap: 2,
+    },
+    docName: {
+      fontSize: 14,
+      color: colors.text,
+    },
+    docUploader: {
+      fontSize: 12,
+      color: colors.muted,
+    },
+    deleteButton: {
+      padding: 4,
+    },
+    primaryButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+      backgroundColor: "#1B2D4E",
+      paddingVertical: 14,
+      borderRadius: 12,
+      marginTop: 4,
+    },
+    primaryButtonText: {
+      color: "#fff",
+      fontSize: 16,
+      fontWeight: "600",
+    },
+    secondaryButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+      backgroundColor: colors.card,
+      paddingVertical: 14,
+      borderRadius: 12,
+      borderWidth: 1.5,
+      borderColor: "#1B2D4E",
+      marginTop: 4,
+    },
+    secondaryButtonText: {
+      color: "#1B2D4E",
+      fontSize: 16,
+      fontWeight: "600",
+    },
+    buttonPressed: {
+      opacity: 0.8,
+    },
+    buttonDisabled: {
+      opacity: 0.6,
+    },
+  });
+}

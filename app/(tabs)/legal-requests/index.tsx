@@ -18,15 +18,15 @@ import {
   STATUS_LABELS,
   type LegalRequest,
 } from "@/app/lib/legal-requests";
+import { useTheme, type ThemeColors } from "@/app/lib/theme";
 
 export default function LegalRequestsScreen() {
   const router = useRouter();
   const { session, loading: sessionLoading } = useSession();
   const profile = useProfile();
+  const { colors } = useTheme();
+  const styles = makeStyles(colors);
   const [requests, setRequests] = useState<LegalRequest[]>([]);
-  // `loading` is only true before the first fetch completes so the initial
-  // spinner shows once.  Subsequent focus-triggered refreshes are silent —
-  // existing rows stay visible while new data loads, eliminating the flicker.
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -49,7 +49,7 @@ export default function LegalRequestsScreen() {
   );
 
   if (sessionLoading) {
-    return <ActivityIndicator style={styles.loader} size="large" color="#007AFF" />;
+    return <ActivityIndicator style={styles.loader} size="large" color="#1B2D4E" />;
   }
 
   if (!session) {
@@ -67,10 +67,10 @@ export default function LegalRequestsScreen() {
         </Text>
         <Text style={styles.itemSubtitle}>{caseTypeLabel(item.case_type)}</Text>
       </View>
-      <View style={[styles.badge, { backgroundColor: STATUS_COLORS[item.status] ?? "#8E8E93" }]}>
+      <View style={[styles.badge, { backgroundColor: STATUS_COLORS[item.status] ?? "#8A8F9D" }]}>
         <Text style={styles.badgeText}>{STATUS_LABELS[item.status] ?? item.status}</Text>
       </View>
-      <Ionicons name="chevron-forward" size={16} color="#C7C7CC" />
+      <Ionicons name="chevron-forward" size={16} color={colors.muted} />
     </Pressable>
   );
 
@@ -90,7 +90,7 @@ export default function LegalRequestsScreen() {
       <View style={styles.container}>
         <Stack.Screen options={{ title: "Legal Requests" }} />
         {loading ? (
-          <ActivityIndicator style={styles.loader} size="large" color="#007AFF" />
+          <ActivityIndicator style={styles.loader} size="large" color="#1B2D4E" />
         ) : (
           <SectionList
             sections={sections}
@@ -122,10 +122,10 @@ export default function LegalRequestsScreen() {
     <View style={styles.container}>
       <Stack.Screen options={{ title: "Legal Requests" }} />
       {loading ? (
-        <ActivityIndicator style={styles.loader} size="large" color="#007AFF" />
+        <ActivityIndicator style={styles.loader} size="large" color="#1B2D4E" />
       ) : requests.length === 0 ? (
         <View style={styles.emptyState}>
-          <Ionicons name="briefcase-outline" size={56} color="#C7C7CC" />
+          <Ionicons name="briefcase-outline" size={56} color={colors.muted} />
           <Text style={styles.emptyTitle}>No requests yet</Text>
           <Text style={styles.emptySubtitle}>Tap + to submit a new legal request</Text>
         </View>
@@ -150,106 +150,108 @@ export default function LegalRequestsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F2F2F7",
-  },
-  loader: {
-    flex: 1,
-    marginTop: 48,
-  },
-  list: {
-    padding: 16,
-    gap: 10,
-    paddingBottom: 100,
-  },
-  item: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#fff",
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 14,
-    gap: 10,
-  },
-  itemPressed: {
-    opacity: 0.75,
-  },
-  itemMain: {
-    flex: 1,
-    gap: 2,
-  },
-  itemTitle: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#000",
-  },
-  itemSubtitle: {
-    fontSize: 13,
-    color: "#8E8E93",
-  },
-  badge: {
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
-  badgeText: {
-    color: "#fff",
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  sectionHeader: {
-    paddingTop: 8,
-    paddingBottom: 4,
-  },
-  sectionHeaderText: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#8E8E93",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  emptySection: {
-    paddingBottom: 8,
-  },
-  emptySectionText: {
-    fontSize: 14,
-    color: "#C7C7CC",
-    fontStyle: "italic",
-  },
-  emptyState: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-  },
-  emptyTitle: {
-    fontSize: 17,
-    fontWeight: "600",
-    color: "#3C3C43",
-  },
-  emptySubtitle: {
-    fontSize: 14,
-    color: "#8E8E93",
-  },
-  fab: {
-    position: "absolute",
-    bottom: 24,
-    right: 24,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: "#007AFF",
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 4,
-  },
-  fabPressed: {
-    opacity: 0.8,
-  },
-});
+function makeStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.bg,
+    },
+    loader: {
+      flex: 1,
+      marginTop: 48,
+    },
+    list: {
+      padding: 16,
+      gap: 10,
+      paddingBottom: 100,
+    },
+    item: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.card,
+      borderRadius: 10,
+      paddingHorizontal: 14,
+      paddingVertical: 14,
+      gap: 10,
+    },
+    itemPressed: {
+      opacity: 0.75,
+    },
+    itemMain: {
+      flex: 1,
+      gap: 2,
+    },
+    itemTitle: {
+      fontSize: 15,
+      fontWeight: "600",
+      color: colors.text,
+    },
+    itemSubtitle: {
+      fontSize: 13,
+      color: colors.muted,
+    },
+    badge: {
+      borderRadius: 6,
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+    },
+    badgeText: {
+      color: "#fff",
+      fontSize: 12,
+      fontWeight: "600",
+    },
+    sectionHeader: {
+      paddingTop: 8,
+      paddingBottom: 4,
+    },
+    sectionHeaderText: {
+      fontSize: 13,
+      fontWeight: "600",
+      color: colors.muted,
+      textTransform: "uppercase",
+      letterSpacing: 0.5,
+    },
+    emptySection: {
+      paddingBottom: 8,
+    },
+    emptySectionText: {
+      fontSize: 14,
+      color: colors.muted,
+      fontStyle: "italic",
+    },
+    emptyState: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+    },
+    emptyTitle: {
+      fontSize: 17,
+      fontWeight: "600",
+      color: colors.subtext,
+    },
+    emptySubtitle: {
+      fontSize: 14,
+      color: colors.muted,
+    },
+    fab: {
+      position: "absolute",
+      bottom: 24,
+      right: 24,
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      backgroundColor: "#1B2D4E",
+      alignItems: "center",
+      justifyContent: "center",
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.2,
+      shadowRadius: 4,
+      elevation: 4,
+    },
+    fabPressed: {
+      opacity: 0.8,
+    },
+  });
+}

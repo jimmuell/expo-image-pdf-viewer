@@ -58,10 +58,10 @@ export const STATUS_LABELS: Record<string, string> = {
 };
 
 export const STATUS_COLORS: Record<string, string> = {
-  draft: "#8E8E93",
-  submitted: "#007AFF",
-  in_review: "#FF9500",
-  closed: "#34C759",
+  draft:     "#8A8F9D",
+  submitted: "#1B2D4E",
+  in_review: "#C9A84C",
+  closed:    "#3A7D4E",
 };
 
 // ── Data functions ───────────────────────────────────────────────

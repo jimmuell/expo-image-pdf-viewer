@@ -10,23 +10,24 @@ import {
 } from "react-native";
 import { useProfile, useSession } from "@/app/lib/auth";
 import { supabase } from "@/app/lib/supabase";
+import { useTheme, type ThemeColors, type ThemePreference } from "@/app/lib/theme";
+
+const ROLE_COLORS = (colors: ThemeColors): Record<string, { bg: string; text: string }> => ({
+  client:   { bg: colors.card === "#FFFFFF" ? "#E8EDF4" : "#1F2D3D", text: "#1B2D4E" },
+  attorney: { bg: colors.card === "#FFFFFF" ? "#F5EEE0" : "#2D2516", text: "#C9A84C" },
+  admin:    { bg: colors.card === "#FFFFFF" ? "#E8EDF4" : "#1F2D3D", text: "#1B2D4E" },
+});
+
+const AVATAR_COLORS: Record<string, string> = {
+  client:   "#1B2D4E",
+  attorney: "#C9A84C",
+  admin:    "#1B2D4E",
+};
 
 const ROLE_LABELS: Record<string, string> = {
   client:   "Client",
   attorney: "Attorney",
   admin:    "Admin",
-};
-
-const ROLE_COLORS: Record<string, { bg: string; text: string }> = {
-  client:   { bg: "#EAF3FF", text: "#007AFF" },
-  attorney: { bg: "#F0E6FF", text: "#AF52DE" },
-  admin:    { bg: "#FFF3EA", text: "#FF9500" },
-};
-
-const AVATAR_COLORS: Record<string, string> = {
-  client:   "#007AFF",
-  attorney: "#AF52DE",
-  admin:    "#FF9500",
 };
 
 function getInitials(fullName: string | null | undefined, email: string): string {
@@ -36,7 +37,6 @@ function getInitials(fullName: string | null | undefined, email: string): string
       ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
       : parts[0].slice(0, 2).toUpperCase();
   }
-  // Derive initials from the email handle: "test-client" → "TC"
   const handle = email.split("@")[0];
   const words  = handle.split(/[-_.]/);
   return words.length >= 2
@@ -51,20 +51,28 @@ function formatDate(iso: string | undefined): string {
   });
 }
 
+const THEME_OPTIONS: { value: ThemePreference; label: string; icon: React.ComponentProps<typeof Ionicons>["name"] }[] = [
+  { value: "light",  label: "Light",  icon: "sunny-outline" },
+  { value: "dark",   label: "Dark",   icon: "moon-outline" },
+  { value: "system", label: "System", icon: "phone-portrait-outline" },
+];
+
 export default function ProfileScreen() {
   const { session, loading } = useSession();
   const profile = useProfile();
+  const { colors, isDark, preference, setPreference } = useTheme();
+  const styles = makeStyles(colors, isDark);
 
   if (loading) return null;
   if (!session)  return <Redirect href="/(auth)/sign-in" />;
 
   const role        = profile?.role ?? "client";
-  const roleLabel   = ROLE_LABELS[role]  ?? role;
-  const roleColor   = ROLE_COLORS[role]  ?? ROLE_COLORS.client;
-  const avatarColor = AVATAR_COLORS[role] ?? "#007AFF";
+  const roleLabel   = ROLE_LABELS[role] ?? role;
+  const roleColor   = ROLE_COLORS(colors)[role] ?? ROLE_COLORS(colors).client;
+  const avatarColor = AVATAR_COLORS[role] ?? "#1B2D4E";
 
-  const email    = session.user.email ?? "";
-  const initials = getInitials(profile?.full_name, email);
+  const email       = session.user.email ?? "";
+  const initials    = getInitials(profile?.full_name, email);
   const memberSince = formatDate(session.user.created_at);
 
   const handleSignOut = () => {
@@ -106,9 +114,35 @@ export default function ProfileScreen() {
         {/* ── Account details ──────────────────────────────────── */}
         <Text style={styles.sectionLabel}>Account</Text>
         <View style={styles.card}>
-          <InfoRow label="Email"        value={email} />
-          <InfoRow label="Role"         value={roleLabel} last={!memberSince} />
-          <InfoRow label="Member since" value={memberSince} last />
+          <InfoRow label="Email"        value={email}       colors={colors} />
+          <InfoRow label="Role"         value={roleLabel}   colors={colors} />
+          <InfoRow label="Member since" value={memberSince} colors={colors} last />
+        </View>
+
+        {/* ── Appearance ───────────────────────────────────────── */}
+        <Text style={styles.sectionLabel}>Appearance</Text>
+        <View style={styles.card}>
+          <View style={styles.themeRow}>
+            {THEME_OPTIONS.map((opt) => {
+              const active = preference === opt.value;
+              return (
+                <Pressable
+                  key={opt.value}
+                  style={[styles.themeTile, active && styles.themeTileActive]}
+                  onPress={() => setPreference(opt.value)}
+                >
+                  <Ionicons
+                    name={opt.icon}
+                    size={20}
+                    color={active ? (isDark ? "#C9A84C" : "#1B2D4E") : colors.muted}
+                  />
+                  <Text style={[styles.themeTileText, active && styles.themeTileTextActive]}>
+                    {opt.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
         </View>
 
         {/* ── Sign out ─────────────────────────────────────────── */}
@@ -128,122 +162,134 @@ export default function ProfileScreen() {
   );
 }
 
-function InfoRow({ label, value, last }: { label: string; value: string; last?: boolean }) {
+function InfoRow({ label, value, last, colors }: { label: string; value: string; last?: boolean; colors: ThemeColors }) {
   return (
-    <View style={[styles.infoRow, !last && styles.infoRowBorder]}>
-      <Text style={styles.infoLabel}>{label}</Text>
-      <Text style={styles.infoValue} numberOfLines={1}>{value}</Text>
+    <View style={[
+      { flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 13, gap: 12 },
+      !last && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.hairline },
+    ]}>
+      <Text style={{ fontSize: 15, color: colors.muted, width: 110, flexShrink: 0 }}>{label}</Text>
+      <Text style={{ flex: 1, fontSize: 15, color: colors.text, textAlign: "right" }} numberOfLines={1}>{value}</Text>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F2F2F7",
-  },
-  scroll: {
-    padding: 16,
-    gap: 12,
-    paddingBottom: 40,
-  },
+function makeStyles(colors: ThemeColors, isDark: boolean) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.bg,
+    },
+    scroll: {
+      padding: 16,
+      gap: 12,
+      paddingBottom: 40,
+    },
 
-  // Hero card
-  heroCard: {
-    backgroundColor: "#fff",
-    borderRadius: 14,
-    padding: 24,
-    alignItems: "center",
-    gap: 8,
-  },
-  avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 4,
-  },
-  avatarText: {
-    fontSize: 30,
-    fontWeight: "700",
-    color: "#fff",
-    letterSpacing: 1,
-  },
-  displayName: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#000",
-  },
-  email: {
-    fontSize: 14,
-    color: "#8E8E93",
-  },
-  rolePill: {
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 5,
-    marginTop: 4,
-  },
-  rolePillText: {
-    fontSize: 13,
-    fontWeight: "600",
-  },
+    // Hero card
+    heroCard: {
+      backgroundColor: colors.card,
+      borderRadius: 14,
+      padding: 24,
+      alignItems: "center",
+      gap: 8,
+    },
+    avatar: {
+      width: 80,
+      height: 80,
+      borderRadius: 40,
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: 4,
+    },
+    avatarText: {
+      fontSize: 30,
+      fontWeight: "700",
+      color: "#fff",
+      letterSpacing: 1,
+    },
+    displayName: {
+      fontSize: 20,
+      fontWeight: "700",
+      color: colors.text,
+    },
+    email: {
+      fontSize: 14,
+      color: colors.muted,
+    },
+    rolePill: {
+      borderRadius: 20,
+      paddingHorizontal: 14,
+      paddingVertical: 5,
+      marginTop: 4,
+    },
+    rolePillText: {
+      fontSize: 13,
+      fontWeight: "600",
+    },
 
-  // Section label
-  sectionLabel: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#8E8E93",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-    marginTop: 4,
-  },
+    // Section label
+    sectionLabel: {
+      fontSize: 13,
+      fontWeight: "600",
+      color: colors.muted,
+      textTransform: "uppercase",
+      letterSpacing: 0.5,
+      marginTop: 4,
+    },
 
-  // Info card
-  card: {
-    backgroundColor: "#fff",
-    borderRadius: 14,
-    overflow: "hidden",
-  },
-  infoRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 13,
-    gap: 12,
-  },
-  infoRowBorder: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#E5E5EA",
-  },
-  infoLabel: {
-    fontSize: 15,
-    color: "#8E8E93",
-    width: 110,
-    flexShrink: 0,
-  },
-  infoValue: {
-    flex: 1,
-    fontSize: 15,
-    color: "#000",
-    textAlign: "right",
-  },
+    // Card
+    card: {
+      backgroundColor: colors.card,
+      borderRadius: 14,
+      overflow: "hidden",
+    },
 
-  // Sign out row
-  signOutRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    gap: 12,
-  },
-  rowPressed: {
-    opacity: 0.6,
-  },
-  signOutText: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#FF3B30",
-  },
-});
+    // Theme toggle
+    themeRow: {
+      flexDirection: "row",
+      padding: 12,
+      gap: 10,
+    },
+    themeTile: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 6,
+      paddingVertical: 12,
+      borderRadius: 10,
+      borderWidth: 1.5,
+      borderColor: colors.border,
+      backgroundColor: colors.bg,
+    },
+    themeTileActive: {
+      borderColor: isDark ? "#C9A84C" : "#1B2D4E",
+      backgroundColor: isDark ? "#1F3350" : "#E8EDF4",
+    },
+    themeTileText: {
+      fontSize: 12,
+      fontWeight: "600",
+      color: colors.muted,
+    },
+    themeTileTextActive: {
+      color: isDark ? "#C9A84C" : "#1B2D4E",
+    },
+
+    // Sign out row
+    signOutRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: 16,
+      paddingVertical: 14,
+      gap: 12,
+    },
+    rowPressed: {
+      opacity: 0.6,
+    },
+    signOutText: {
+      fontSize: 15,
+      fontWeight: "600",
+      color: "#FF3B30",
+    },
+  });
+}
